@@ -9,6 +9,8 @@ You may use libraries to achieve a better GUI
 */
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -26,6 +28,7 @@ import java.io.IOException;
 //--module-path  "C:\Program Files\Java\javafx-sdk-19\lib"  --add-modules javafx.controls,javafx.fxml
 
 public class Main extends Application {
+
     static Sphere firstSphere, secondSphere, thirdSphere, fourthSphere;
     int Width = 640;
     int Height = 640;
@@ -35,6 +38,24 @@ public class Main extends Application {
     double xCo_ord = 0;
     double yCo_ord = 0;
     double zCo_ord = 0;
+
+    double x, y , z;
+    double u, v;
+    Vector VRP;/*View reference point. The view reference point (VRP) is a 3D
+        coor-dinate defining the position of the centre of the image plane. the */
+
+    Vector VPN;
+        /*View plane normal. The view plane normal (VPN) is a 3D vector
+        defining the direction the camera looks in world space.*/
+
+    Vector VUV;/*The view up vector (VUV) is a 3D vector defining the
+        up direction (or y-axis) of the camera in world space*/
+
+    Vector look_At; /* The look at (LookAt) is a 3D point defining where exactly the
+        camera is pointing*/
+    Vector VRV; /* is a 3D vector defining
+        the direction the right (or x-axis) of the camera in world space*/
+
     double radiusOfSphere = 50;
     RayTracer ray;
     //radio button
@@ -57,6 +78,13 @@ public class Main extends Application {
         //2. We create a view of that image
         ImageView view = new ImageView(image);
         //3. Add to the pane (below)
+      //  ray.setOrigin(new Vector(i - w / 2, j - h / 2, -400))
+        this.VRP = new Vector(x,y,z);
+
+        this.VUV =  new Vector(0,1,0);
+        this.look_At =  new Vector(0,0,0);
+        this.VRV  = new Vector(1,0,0);
+        setCam();
 
         // Here instantiate radioButton to control the spheres
         sphere1Toggle = createNewRadioButton("Sphere1", "r1");
@@ -81,6 +109,16 @@ public class Main extends Application {
         Slider sphereZSlider = new Slider (-255, 255, 0);
         sphereZSlider.setShowTickLabels(true);
 
+        //Control the camera of the object
+        Slider cameraSliderX = new Slider(x, y,z);
+        Slider cameraSliderY = new Slider(x, y,z);
+        cameraSliderY.setShowTickLabels(true);
+        cameraSliderY.setMin(0);
+        cameraSliderY.setMax(360);
+        cameraSliderY.setValue(180);
+
+        double u, v;
+
         Label radiusVal = new Label("Radius");
         Label redVal = new Label("Red");
         Label greenVal = new Label("Green");
@@ -88,6 +126,10 @@ public class Main extends Application {
         Label xPos = new Label("X_POS");
         Label yPos = new Label("Y_POS");
         Label zPos = new Label("Z_POS");
+
+        Label verticaCameraLable = new Label("Azimuth");
+        Label horizontalCameraLable = new Label("Altitude");
+
         //Instantiating hard core value for the original sphere
         Vector sphere_col = new Vector(1.0, 1.0, 1.0);
         Vector sphere4_col = new Vector(red_col, green_col, blue_col);
@@ -282,6 +324,7 @@ public class Main extends Application {
                 Render(image);
 
             });
+
             sphereZSlider.setOnMouseReleased(event4 -> {
                 zCo_ord = sphereZSlider.getValue();
                 Vector cent = new Vector(xCo_ord, yCo_ord, zCo_ord);
@@ -291,13 +334,29 @@ public class Main extends Application {
             });
 
         });
+
+        // TODO SET THE CAMERA FOR X POSITION,FOR PART 7, UNCOMPLETED
+
+        cameraSliderY.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number oldValue, Number newValue) {
+                // change the orgin of the sphere
+                //change the VPN
+                // change the
+                y = newValue.doubleValue();
+
+                Render(image);
+
+
+            }
+        });
+
         /*The following is in case you want to interact with the image in any way
-        //e.g., for user interaction, or you can find out the pixel position for debugging
+        //e.g., for user interaction, or you can find out the pixel position for debugging */
         view.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_PRESSED, event -> {
             System.out.println(event.getX() + " " + event.getY());
             event.consume();
         });
-         */
 
         Render(image);
         GridPane root = new GridPane();
@@ -320,6 +379,8 @@ public class Main extends Application {
         root.add(sphereYSlider, 0, 5);
         root.add(sphereZSlider, 0, 6);
         root.add(sphereRadiusSlider, 0, 7);
+        root.add(cameraSliderY, 0, 8);
+        root.add(cameraSliderX, 0, 9);
 
         root.add(redVal, 1, 1);
         root.add(greenVal, 1, 2);
@@ -328,6 +389,9 @@ public class Main extends Application {
         root.add(yPos, 1, 5);
         root.add(zPos, 1, 6);
         root.add(radiusVal, 1, 7);
+        root.add(verticaCameraLable, 1, 8);
+        root.add(horizontalCameraLable, 1, 9);
+
 
         //Display to user
         Scene scene = new Scene(root, 1000, 1000);
@@ -335,6 +399,13 @@ public class Main extends Application {
         stage.show();
     }
 
+    /**
+     * Method to create multiple radiobuttons to specifically slelect the spheres and control
+     * its colours and the positions
+     * @param name
+     * @param ID
+     * @return
+     */
 
     public RadioButton createNewRadioButton(String name, String ID) {
         RadioButton radioButton = new RadioButton();
@@ -344,12 +415,22 @@ public class Main extends Application {
         return radioButton;
 
     }
+    public void setCam() {
+        this.VPN = look_At.sub(VRP);
+        this.VPN.normalise();
+        this.VRV = VPN.cross(VUV);
+        this.VPN.normalise();
+        this. VUV = VRV.cross(VPN);
+        this.VUV.normalise();
+
+    }
 
     public void Render(WritableImage image) {
         //Get image dimensions, and declare loop variables
         int w = (int) image.getWidth(), h = (int) image.getHeight(), i, j;
         PixelWriter image_writer = image.getPixelWriter();
         Vector backgroundColour = new Vector(0, 0, 0); // the  background colour
+        ray.setOrigin((VRP.add(VRV.mul(u).add(VUV.mul(v)))));
         for (j = 0; j < h; j++) {
             for (i = 0; i < w; i++) {
                 image_writer.setColor(i, j, Color.color(backgroundColour.x, backgroundColour.y, backgroundColour.z, 1.0));
@@ -360,14 +441,16 @@ public class Main extends Application {
         for (j = 0; j < h; j++) {
             for (i = 0; i < w; i++) {
                 // trace the ray against the scene
-
+                ray.setOrigin(new Vector(u, v, -400));
                 //for each sphere in the, check if it has intersection
                 for (Sphere sphere : ray.getSpheres()) {
                     //it doesnt interscet with the sphere so it goes in the backgorund
                     if (ray.rayInteractionsDistance(sphere) < 0) {
                         image_writer.setColor(i, j, Color.color(backgroundColour.x, backgroundColour.y, backgroundColour.z, 1.0));
                     }
-                    ray.setOrigin(new Vector(i - w / 2, j - h / 2, -400));
+                    v = ((h - j)-h/2) * 1;
+                    u = (i - w/2)* 1;
+                   // ray.setCamera();
                     // which is the closest sphere -the index to the sphere so far, the smallest positive t
                     Sphere closestSphere = ray.closestSphereInArray();
                     //given a sphere it will we other you hit, the smallest positive t
@@ -381,5 +464,6 @@ public class Main extends Application {
 
         } // column loop
     }// row loop
+
 
 }

@@ -3,8 +3,7 @@ package com.example.projectfour;
 import java.util.ArrayList;
 
 public class RayTracer {
-
-    Vector v;
+    Vector u, w, v;
     double discriminate;
     double t;
     private Vector direction;
@@ -12,18 +11,25 @@ public class RayTracer {
     static ArrayList<Sphere> listOfSpheres;
     private Vector origin;
 
+
+
+/*
+    Initialising the variable for raytracing
+ */
     public RayTracer() {
         this.listOfSpheres = new ArrayList<>();
         this.origin = new Vector(0, 0, 0);
-        this.direction = new Vector(0, 0, 1);
+        this.direction = new Vector(0, 0, 1); // VPN
         this.light = new Vector(0, 300, -400);
-        this.v = new Vector(0, 0 , 0);
+        this.v = new Vector(0, 0 , 3);
     }
+
     /**
      * this is a method to call to calculate the t value
-     *
      * @param sphere
-     * @return return the double value the intersection distance to see if it hits the sphere
+     * @return return the double value the intersection distance to see if it hits the sphere, and we get
+     * the distance of the hit
+     * @return double tvalue
      */
     public double rayInteractionsDistance(Sphere sphere) {
         setV(getOrigin().sub(sphere.getCentre()));
@@ -45,6 +51,14 @@ public class RayTracer {
             return t;
         }
     }
+
+    /**
+     * this method takes the sphere and the intersection and does the ambient colouring and the
+     * difusing shading. this ensures we dont have to write the code in the main class
+     * @param sphere
+     * @param ray
+     * @return Vector color for the sphere
+     */
     public Vector ambientShading(Sphere sphere, RayTracer ray) {
         Vector intersection = ray.getOrigin().add(ray.getDirection().mul(ray.getT()));
         Vector normal = intersection.sub(sphere.getCentre());
@@ -83,7 +97,6 @@ public class RayTracer {
     }
     /**
      * void Method to create new spheres and it is stored in the raytrace class  to the rayTrace arraylist of spheres
-     *
      * @param radius
      * @param centre
      * @param colour
